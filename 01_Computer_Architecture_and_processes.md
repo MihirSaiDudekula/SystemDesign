@@ -1,5 +1,3 @@
-This is a great question that dives into how a C program transforms into a running process and how memory is managed in the system.
-
 ---
 
 ## **Step 1: Writing and Compiling the C Program**
