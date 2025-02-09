@@ -1,5 +1,3 @@
----
-
 ## **1. Developer Workflow: Build & Deploy Code**
 ### **1.1. Development**
 - A **developer** writes code for a web application using:
