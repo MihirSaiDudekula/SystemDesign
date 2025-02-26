@@ -40,6 +40,62 @@
 ### **B. GraphQL**
 - **GraphQL is a query language** for APIs developed by Facebook.
 - Uses **only POST requests** (unlike REST, which uses multiple methods).
+
+- In GraphQL, all requests are made using the POST method, regardless of whether you're fetching data, modifying data, or performing other actions. This is in contrast to REST APIs, which use different HTTP methods for different operations
+- body can contain:
+
+A query (a read operation, like fetching specific fields of data).
+A mutation (a write operation, like creating or updating data).
+A subscription (to listen for real-time updates).
+Because GraphQL operates with a single endpoint, POST is chosen to accommodate the flexibility and complexity of the request body. The request is sent to a server with the required query or mutation in the request body, and the server responds with the requested data.
+
+
+What is Overfetching and Underfetching?
+Overfetching and underfetching are common problems in traditional REST APIs. These issues arise from the way data is requested and delivered in REST, where you typically request a fixed set of data from an endpoint.
+
+Overfetching
+Overfetching occurs when an API returns more data than what the client actually needs. This can happen when an endpoint returns a larger set of data than the client requires, leading to inefficiencies like:
+
+Unnecessary network usage (since more data is transferred than necessary).
+Increased response size (more data than needed).
+Slower performance for the client and server.
+For example, in a REST API, a request to fetch a list of users might also return unnecessary information about each user, like their posts, comments, or other details that are irrelevant to the current use case.
+
+Example of Overfetching in REST:
+Request: GET /users
+Response:
+json
+Copy
+[
+  { "id": 1, "name": "Alice", "email": "alice@example.com", "posts": [...] },
+  { "id": 2, "name": "Bob", "email": "bob@example.com", "posts": [...] }
+]
+If the client only needs the user's name and email but the server still sends the posts, that's overfetching.
+
+Underfetching
+Underfetching occurs when an API doesn’t provide enough data in a single request, forcing the client to make multiple requests to get all the necessary information. This is a problem when an endpoint does not return all the relevant information in the response, requiring the client to fetch additional data by making multiple API calls.
+
+For example, in a REST API, if you make a request to fetch user details but the server only returns basic information (like their name) and not their posts or other details, you will need to make a second request to get the posts or additional data.
+
+Example of Underfetching in REST:
+Request: GET /users/1
+Response:
+json
+Copy
+{
+  "id": 1,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+To get posts, you'd need to make a second request: GET /users/1/posts.
+
+How GraphQL Solves These Problems
+In GraphQL, these issues are solved in the following ways:
+
+No Overfetching: The client specifies exactly what data it needs in the query. The server will return only the data requested, so there's no unnecessary data included in the response.
+No Underfetching: The client can request all the data it needs in a single query. If you need the user's name, email, and posts, you can request them all in one request, and the server will return exactly what’s needed
+
+
 - **Solves REST’s overfetching and underfetching problems**.
 
 ### **How GraphQL Works:**
