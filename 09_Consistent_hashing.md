@@ -28,59 +28,94 @@ In traditional **Round Robin** or **Least Connections** load balancing, a reques
 
 ---
 
-### **Python Implementation of Consistent Hashing**  
-```python
-import hashlib
-import bisect
+# **Understanding Consistent Hashing with a Simple Example**
 
-class ConsistentHashing:
-    def __init__(self, num_replicas=3):
-        self.num_replicas = num_replicas
-        self.ring = {}  # Maps hash values to servers
-        self.sorted_keys = []  # Sorted list of hash values
+### **Problem with Traditional Load Balancing**  
+Consider a **traditional load balancer** that distributes incoming requests to servers **randomly** or using **round-robin**.  
+If **Server A** is removed or added, many requests will get **redirected to a different server**, causing:  
+- **Session Loss** (if session data is stored on individual servers).  
+- **Cache Inefficiency** (requests may no longer go to the server where cached data is stored).  
 
-    def _hash(self, key):
-        """Returns a consistent hash for a given key."""
-        return int(hashlib.md5(key.encode()).hexdigest(), 16) % (2**32)
+### **How Consistent Hashing Helps**  
+Instead of **randomly assigning** requests to servers, we:  
+1. **Assign a unique hash** to each server and request.  
+2. Place them on a **circular ring** (hash space).  
+3. Each request is assigned to the **next server clockwise**.  
 
-    def add_server(self, server):
-        """Adds a server to the hash ring."""
-        for i in range(self.num_replicas):
-            hash_value = self._hash(f"{server}-{i}")
-            self.ring[hash_value] = server
-            bisect.insort(self.sorted_keys, hash_value)
+If a **server is removed**, only requests assigned to that server need **redistribution**—other requests remain mapped **as before**.  
 
-    def remove_server(self, server):
-        """Removes a server from the hash ring."""
-        for i in range(self.num_replicas):
-            hash_value = self._hash(f"{server}-{i}")
-            if hash_value in self.ring:
-                self.ring.pop(hash_value)
-                self.sorted_keys.remove(hash_value)
+---
 
-    def get_server(self, request_key):
-        """Finds the server for the given request using consistent hashing."""
-        if not self.ring:
-            return None
-        
-        hash_value = self._hash(request_key)
-        idx = bisect.bisect(self.sorted_keys, hash_value) % len(self.sorted_keys)
-        return self.ring[self.sorted_keys[idx]]
+## **Step-by-Step Explanation of Consistent Hashing**  
 
-# Example Usage
-ch = ConsistentHashing()
-ch.add_server("ServerA")
-ch.add_server("ServerB")
-ch.add_server("ServerC")
+### **1. Creating a Hash Ring**  
+Imagine a **circular space** (hash ring) with values ranging from **0 to 100** (for simplicity).  
 
-print(ch.get_server("192.168.1.10"))  # Should return the same server for the same IP
+We add **three servers**:  
+- `Server A` is hashed to position **20**  
+- `Server B` is hashed to position **60**  
+- `Server C` is hashed to position **90**  
+
+**Diagram Representation:**  
+
+```
+  0         20       60       90       100
+  |---------|--------|--------|--------|
+           A        B        C
 ```
 
 ---
 
-### **Benefits of Consistent Hashing in Load Balancing**  
-✅ **Minimizes key movement** when servers are added/removed.  
-✅ **Ensures session persistence** for stateful requests.  
-✅ **Improves cache efficiency** by reducing cache misses.  
+### **2. Assigning Requests to Servers**  
+Now, let's say a **client request is hashed** to a value of **50**.  
+- We move **clockwise** to find the next available server.  
+- `50` is between `20 (A)` and `60 (B)`, so it goes to `Server B`.  
+
+```
+  0         20       50       60       90       100
+  |---------|--------x--------|--------|--------|
+           A                 B        C
+```
+
+Another request hashes to **85**:  
+- `85` is between `60 (B)` and `90 (C)`, so it goes to `Server C`.  
 
 ---
+
+### **3. What Happens When a Server is Removed?**  
+If **Server B is removed**, all requests mapped to `B` will go to the **next server clockwise (`C`)**.  
+- Requests mapped to **Server A or C remain unchanged**.  
+
+```
+  0         20       50       60       90       100
+  |---------|--------x--------|--------|--------|
+           A                 (B removed) C
+```
+
+Now, **50 (previously going to B) will go to C instead**.  
+
+---
+
+### **4. What Happens When a New Server is Added?**  
+Now, suppose we add **Server D**, which hashes to **40**.  
+- Requests previously going to **B** will now be split between **B and D**.  
+
+```
+  0         20       40       50       60       90       100
+  |---------|--------|--------x--------|--------|--------|
+           A        D                 B        C
+```
+
+✅ **Minimal data movement!** Only requests **between A and B** are affected.  
+
+---
+
+## **Advantages of Consistent Hashing**  
+🔹 **Minimizes request reassignment** when servers are added/removed.  
+🔹 **Efficient load distribution** with **fewer disruptions**.  
+🔹 **Works well for cache servers (e.g., Redis, Memcached)**.  
+
+### **Use Cases**  
+✔ **Load balancing (Nginx, AWS ELB)**  
+✔ **Distributed databases (Cassandra, DynamoDB)**  
+✔ **Content Delivery Networks (CDNs)**  
